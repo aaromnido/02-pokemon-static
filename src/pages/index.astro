@@ -14,6 +14,11 @@ console.log('~data:', data);
 <MainLayout title={title}>
 	<h1 class="text-3xl mb-4">{headline}</h1>
 	<section class="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-3 gap-4" aria-label="Pokemon List">
-		{pokemon.map((pokemon) => <PokemonCard name={pokemon.name} url={pokemon.url} />)}
+		{data.results.map((pokemon) => (
+			<PokemonCard 
+				name={pokemon.name} 
+				url={pokemon.url} 
+			/>
+		))}
 	</section>
 </MainLayout>

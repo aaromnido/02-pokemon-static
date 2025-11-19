@@ -169,24 +169,47 @@ const title = "Pokemon Battle | Higher or Lower";
     </div>
 </MainLayout>
 
+<style>
+    /* Winner Animation - Global because applied to dynamic JS elements */
+    :global(@keyframes winner-pulse) {
+        0% {
+            box-shadow: 0 0 0 0 rgba(250, 204, 21, 0.7);
+            transform: scale(1);
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        50% {
+            box-shadow: 0 0 60px 20px rgba(250, 204, 21, 0.8);
+            transform: scale(1.1);
+            background-color: rgba(250, 204, 21, 0.2);
+            border-color: #facc15;
+        }
+        100% {
+            box-shadow: 0 0 0 0 rgba(250, 204, 21, 0);
+            transform: scale(1);
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+    }
+
+    :global(.winner-card) {
+        animation: winner-pulse 0.8s ease-in-out infinite !important;
+        border: 4px solid #facc15 !important;
+        z-index: 100 !important;
+        position: relative;
+    }
+</style>
+
 <script>
     import type { PokemonDetailsResponse } from "../../interfaces/pokemon-details.response";
 
-    // Types
-    interface GamePokemon {
-        name: string;
-        image: string;
-        stats: { name: string; value: number }[];
-    }
-
     // State
-    let currentPokemon: GamePokemon | null = null;
-    let nextPokemon: GamePokemon | null = null;
-    let currentStatIndex = 0; // Index in the stats array
+    let currentPokemon: PokemonDetailsResponse | null = null;
+    let nextPokemon: PokemonDetailsResponse | null = null;
     let score = 0;
     let roundsPlayed = 0;
+    let isLoading = false;
     let isGameOver = false;
-    let isLoading = true;
+    let currentStatIndex = 0;
+    const MAX_ROUNDS = 10;
 
     // DOM Elements
     const currentContainer = document.getElementById(
@@ -198,127 +221,84 @@ const title = "Pokemon Battle | Higher or Lower";
     const questionText = document.getElementById("question-text");
     const btnHigher = document.getElementById("btn-higher");
     const btnLower = document.getElementById("btn-lower");
-    const controls = document.getElementById("game-controls");
     const loadingIndicator = document.getElementById("loading-indicator");
+    const controls = document.getElementById("game-controls");
 
-    // Game Over Elements
+    // Game Over Modal Elements
     const gameOverModal = document.getElementById("game-over-modal");
-    const gameOverContent = document.getElementById("game-over-content");
-    const gameOverIcon = document.getElementById("game-over-icon");
-    const gameOverTitle = document.getElementById("game-over-title");
-    const gameOverMessage = document.getElementById("game-over-message");
-    const finalScore = document.getElementById("final-score");
+    const finalScoreDisplay = document.getElementById("final-score");
     const btnRestart = document.getElementById("btn-restart");
-
-    // Constants
-    const MAX_ROUNDS = 10;
+    const gameOverMessage = document.getElementById("game-over-message");
+    const gameOverIcon = document.getElementById("game-over-icon");
 
     // Utils
-    const getRandomId = () => Math.floor(Math.random() * 151) + 1;
+    const capitalize = (str: string) =>
+        str.charAt(0).toUpperCase() + str.slice(1);
 
-    const fetchPokemon = async (): Promise<GamePokemon> => {
-        const id = getRandomId();
-        const resp = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`);
-        const data = (await resp.json()) as PokemonDetailsResponse;
-
-        return {
-            name: data.name,
-            image: data.sprites.other?.["official-artwork"].front_default || "",
-            stats: data.stats.map((s) => ({
-                name: s.stat.name,
-                value: s.base_stat,
-            })),
-        };
+    const fetchPokemon = async (): Promise<PokemonDetailsResponse> => {
+        const id = Math.floor(Math.random() * 151) + 1;
+        const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`);
+        return await response.json();
     };
 
-    const pickRandomStatIndex = () => Math.floor(Math.random() * 6); // 0-5
+    const pickRandomStatIndex = () => Math.floor(Math.random() * 6);
 
     const renderCard = (
-        pokemon: GamePokemon,
+        pokemon: PokemonDetailsResponse | null,
         container: HTMLElement | null,
-        showStat: boolean,
-        statIndex: number,
+        showStats: boolean,
+        highlightStatIndex: number,
     ) => {
-        if (!container || !pokemon) return;
+        if (!pokemon || !container) return;
 
-        const stat = pokemon.stats[statIndex];
-        let statName = stat.name.replace("-", " ");
-        if (stat.name === "hp") {
-            statName = "Hit Points";
-        }
-
-        const statHtml = showStat
-            ? `<div class="mt-4 text-center animate-fade-in">
-             <p class="text-sm text-white/60 uppercase tracking-wider">${statName}</p>
-             <p class="text-4xl font-normal text-white">${stat.value}</p>
-           </div>`
-            : `<div class="mt-4 text-center">
-             <p class="text-sm text-white/60 uppercase tracking-wider">${statName}</p>
-             <p class="text-4xl font-normal text-white/40">???</p>
-           </div>`;
+        const stat = pokemon.stats[highlightStatIndex];
+        const statName =
+            stat.stat.name === "hp" ? "Hit Points" : capitalize(stat.stat.name);
+        const value = showStats ? stat.base_stat : "?";
 
         container.innerHTML = `
-        <div class="w-64 h-96 bg-white/5 backdrop-blur-md border border-white/10 rounded-3xl p-6 flex flex-col items-center justify-center shadow-2xl transition-all duration-500">
-            <img src="${pokemon.image}" alt="${pokemon.name}" class="w-40 h-40 object-contain drop-shadow-lg mb-4" />
-            <h2 class="text-2xl font-normal text-white capitalize text-center">${pokemon.name}</h2>
-            ${statHtml}
-        </div>
-      `;
+            <div class="pokemon-card relative w-72 bg-slate-800/50 backdrop-blur-md border border-white/10 rounded-3xl p-8 flex flex-col items-center shadow-2xl transition-all duration-500">
+                <img src="${pokemon.sprites.other?.["official-artwork"].front_default ?? pokemon.sprites.front_default}" alt="${pokemon.name}" class="w-48 h-48 drop-shadow-xl mb-6 z-10" />
+                <h3 class="text-3xl font-bold text-white mb-8 capitalize tracking-wide">${pokemon.name}</h3>
+                
+                <div class="flex flex-col items-center gap-2 w-full">
+                    <span class="text-white/60 text-lg font-medium uppercase tracking-wider">${statName}</span>
+                    <span class="text-6xl font-bold text-yellow-400 drop-shadow-md font-mono">${value}</span>
+                </div>
+            </div>
+        `;
     };
 
     const updateQuestion = () => {
-        if (!nextPokemon || !questionText) return;
-        let statName = nextPokemon.stats[currentStatIndex].name.replace(
-            "-",
-            " ",
-        );
-        if (nextPokemon.stats[currentStatIndex].name === "hp") {
-            statName = "Hit Points";
-        }
-        // "Is Nidorina attack... ?"
-        // Capitalize name
-        const name =
-            nextPokemon.name.charAt(0).toUpperCase() +
-            nextPokemon.name.slice(1);
-        questionText.innerHTML = `Is <span class="text-yellow-400">${name}'s</span> <span class="text-blue-400">${statName}</span>...`;
+        if (!currentPokemon || !questionText) return;
+        const statName = currentPokemon.stats[currentStatIndex].stat.name;
+        const formattedStat =
+            statName === "hp" ? "Hit Points" : capitalize(statName);
+        questionText.innerHTML = `Does <span class="text-yellow-400 font-bold capitalize">${nextPokemon?.name}</span> have higher or lower <span class="text-blue-400 font-bold">${formattedStat}</span>?`;
     };
 
     const showGameOver = () => {
-        if (
-            !gameOverModal ||
-            !gameOverContent ||
-            !gameOverIcon ||
-            !gameOverTitle ||
-            !gameOverMessage ||
-            !finalScore
-        )
-            return;
-
         isGameOver = true;
-        finalScore.innerText = score.toString();
-
-        if (score >= MAX_ROUNDS) {
-            gameOverTitle.innerText = "You Won!";
-            gameOverMessage.innerText = "Perfect 10 rounds!";
-            gameOverIcon.innerHTML =
-                '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trophy"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2h-5.5a5.5 5.5 0 0 0-5.5 5.5V9c0 3.02 2.34 5.5 5.14 5.5h.72c2.8 0 5.14-2.48 5.14-5.5V7.5A5.5 5.5 0 0 0 18 2Z"/></svg>';
-        } else if (score > 5) {
-            gameOverTitle.innerText = "You are Superb!";
-            gameOverMessage.innerText = "Great knowledge trainer!";
-            gameOverIcon.innerHTML =
-                '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trophy"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2h-5.5a5.5 5.5 0 0 0-5.5 5.5V9c0 3.02 2.34 5.5 5.14 5.5h.72c2.8 0 5.14-2.48 5.14-5.5V7.5A5.5 5.5 0 0 0 18 2Z"/></svg>';
-        } else {
-            gameOverTitle.innerText = "Game Over";
-            gameOverMessage.innerText = "I'm sorry, try again!";
-            gameOverIcon.innerHTML =
-                '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-frown"><circle cx="12" cy="12" r="10"/><path d="M16 16s-1.5-2-4-2-4 2-4 2"/><line x1="9" x2="9.01" y1="9" y2="9"/><line x1="15" x2="15.01" y1="9" y2="9"/></svg>';
+        if (gameOverModal) {
+            gameOverModal.classList.remove("hidden");
+            setTimeout(() => {
+                gameOverModal.classList.remove("opacity-0");
+            }, 10);
         }
+        if (finalScoreDisplay) finalScoreDisplay.innerText = score.toString();
 
-        gameOverModal.classList.remove("hidden");
-        // Trigger reflow
-        void gameOverModal.offsetWidth;
-        gameOverModal.classList.remove("opacity-0");
-        gameOverContent.classList.remove("scale-90");
+        if (gameOverMessage && gameOverIcon) {
+            if (score >= 5) {
+                gameOverMessage.innerText =
+                    "Amazing job! You're a Pokémon Master!";
+                gameOverIcon.innerHTML =
+                    '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trophy"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>';
+            } else {
+                gameOverMessage.innerText = "Nice try! Keep training!";
+                gameOverIcon.innerHTML =
+                    '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-frown"><circle cx="12" cy="12" r="10"/><path d="M16 16s-1.5-2-4-2-4 2-4 2"/><line x1="9" x2="9.01" y1="9" y2="9"/><line x1="15" x2="15.01" y1="9" y2="9"/></svg>';
+            }
+        }
     };
 
     const initGame = async () => {
@@ -352,8 +332,6 @@ const title = "Pokemon Battle | Higher or Lower";
             renderCard(nextPokemon, nextContainer, false, currentStatIndex);
             updateQuestion();
 
-            isLoading = false;
-            if (loadingIndicator) loadingIndicator.style.display = "none";
             if (controls) {
                 controls.style.opacity = "1";
                 controls.style.pointerEvents = "auto";
@@ -361,6 +339,10 @@ const title = "Pokemon Battle | Higher or Lower";
             if (questionContainer) questionContainer.style.opacity = "1";
         } catch (error) {
             console.error("Failed to init game", error);
+            alert("Error loading game. Please refresh.");
+        } finally {
+            isLoading = false;
+            if (loadingIndicator) loadingIndicator.style.display = "none";
         }
     };
 
@@ -372,15 +354,56 @@ const title = "Pokemon Battle | Higher or Lower";
         // Reveal next pokemon stat
         renderCard(nextPokemon, nextContainer, true, currentStatIndex);
 
-        const currentVal = currentPokemon.stats[currentStatIndex].value;
-        const nextVal = nextPokemon.stats[currentStatIndex].value;
+        const currentVal = currentPokemon.stats[currentStatIndex].base_stat;
+        const nextVal = nextPokemon.stats[currentStatIndex].base_stat;
 
         const isHigher = nextVal >= currentVal;
         const isCorrect =
             (guess === "higher" && isHigher) ||
             (guess === "lower" && !isHigher);
 
-        await new Promise((r) => setTimeout(r, 1000));
+        // Determine Winner
+        let winnerContainer: HTMLElement | null = null;
+        if (nextVal > currentVal) {
+            winnerContainer = nextContainer;
+            console.log("Winner is Next Pokemon");
+        } else if (currentVal > nextVal) {
+            winnerContainer = currentContainer;
+            console.log("Winner is Current Pokemon");
+        } else {
+            console.log("It's a Tie");
+            winnerContainer = null;
+        }
+
+        // Apply winner animation
+        if (winnerContainer) {
+            const card = winnerContainer.querySelector(".pokemon-card");
+            if (card) {
+                console.log("Adding winner-card class to", card);
+                card.classList.add("winner-card");
+            } else {
+                console.error(
+                    "Could not find .pokemon-card in winner container",
+                );
+            }
+        } else if (currentVal === nextVal) {
+            // Tie
+            currentContainer
+                ?.querySelector(".pokemon-card")
+                ?.classList.add("winner-card");
+            nextContainer
+                ?.querySelector(".pokemon-card")
+                ?.classList.add("winner-card");
+        }
+
+        await new Promise((r) => setTimeout(r, 2000)); // Wait a bit longer to see the animation
+
+        // Remove animation classes
+        const currentCard = currentContainer?.querySelector(".pokemon-card");
+        const nextCard = nextContainer?.querySelector(".pokemon-card");
+
+        if (currentCard) currentCard.classList.remove("winner-card");
+        if (nextCard) nextCard.classList.remove("winner-card");
 
         // Always increment rounds played
         roundsPlayed++;

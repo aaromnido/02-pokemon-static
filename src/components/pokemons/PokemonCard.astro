@@ -33,38 +33,50 @@ try {
 }
 ---
 
-<article class="group w-full h-[300px] perspective-1000 cursor-pointer">
+<article
+    class="group w-full h-[300px] perspective-1000 cursor-pointer transition-transform duration-500 hover:scale-105"
+>
     <div
         class="relative w-full h-full transition-transform duration-700 transform-style-3d"
         id={`card-${id}`}
     >
         <!-- Front -->
         <div
-            class="absolute w-full h-full backface-hidden bg-slate-700 rounded-md flex flex-col items-center justify-center p-4 border border-1 border-violet-400"
+            class="absolute w-full h-full backface-hidden rounded-2xl flex flex-col items-center justify-center p-4 border border-white/10 bg-white/5 backdrop-blur-sm shadow-lg overflow-hidden"
         >
+            <div
+                class="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none"
+            >
+            </div>
             <img
                 src={imageUrl}
                 alt={name}
-                class="w-full h-auto object-contain max-h-[200px]"
+                class="w-full h-auto object-contain max-h-[180px] drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)] z-10 transition-transform duration-500 group-hover:scale-110"
             />
-            <h3 class="text-xl capitalize text-center mt-4">{name}</h3>
+            <h3
+                class="text-xl font-bold capitalize text-center mt-4 text-white tracking-wide z-10"
+            >
+                {name}
+            </h3>
         </div>
 
         <!-- Back -->
         <div
-            class="absolute w-full h-full backface-hidden rotate-y-180 bg-slate-800 rounded-md flex flex-col items-center justify-center p-4 border border-1 border-violet-400"
+            class="absolute w-full h-full backface-hidden rotate-y-180 rounded-2xl flex flex-col items-center justify-center p-6 border border-white/10 bg-white/10 backdrop-blur-md shadow-xl"
         >
-            <h3 class="text-xl capitalize text-center mb-4 text-violet-300">
+            <h3
+                class="text-2xl font-bold capitalize text-center mb-6 text-white/90"
+            >
                 {name} Stats
             </h3>
-            <ul class="w-full space-y-2">
+            <ul class="w-full space-y-3">
                 {
                     stats.map((stat) => (
-                        <li class="flex justify-between items-center text-sm">
-                            <span class="capitalize text-slate-300">
+                        <li class="flex justify-between items-center text-base border-b border-white/10 pb-1">
+                            <span class="capitalize text-white/70 font-light">
                                 {stat.name}
                             </span>
-                            <span class="font-bold text-white">
+                            <span class="font-semibold text-white">
                                 {stat.value}
                             </span>
                         </li>

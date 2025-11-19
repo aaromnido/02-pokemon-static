@@ -25,13 +25,13 @@ console.log("~data:", data);
 			href="/battle"
 			class="py-4 px-8 rounded-full bg-yellow-400 hover:bg-yellow-300 text-slate-900 font-semibold text-lg transition-all shadow-lg hover:shadow-yellow-400/25 hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2"
 		>
-			<Play class="w-6 h-6 fill-slate-900" /> Pokémon
+			<Play class="w-6 h-6 fill-slate-900" /> Pokémon Battle
 		</a>
 	</div>
 
 	<section
 		aria-label="Listado de Pokémons"
-		class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-5"
+		class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-5"
 	>
 		{
 			data.results.map((pokemon) => (

@@ -1,14 +1,107 @@
 ---
+import type { PokemonDetailsResponse } from "../../interfaces/pokemon-details.response";
+
 interface Props {
     url: string;
     name: string;
 }
 
-const { name, url} = Astro.props;
-const id = url.split('/').at(-2);
+const { name, url } = Astro.props;
+const id = url.split("/").at(-2);
 const imageUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`;
+
+let stats = [];
+try {
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error(`Failed to fetch ${url}: ${resp.statusText}`);
+    const data = (await resp.json()) as PokemonDetailsResponse;
+    stats = data.stats
+        .map((s) => ({
+            name: s.stat.name,
+            value: s.base_stat,
+        }))
+        .slice(0, 4);
+} catch (error) {
+    console.error(`Error fetching stats for ${name}:`, error);
+    // Fallback stats or empty
+    stats = [
+        { name: "hp", value: "??" },
+        { name: "attack", value: "??" },
+        { name: "defense", value: "??" },
+        { name: "speed", value: "??" },
+    ];
+}
 ---
-<article class="bg-slate-700 rounded-md flex flex-col items-center justify-center p-4 border border-1 border-violet-400">
-    <img src={imageUrl} alt={name} class="w-full h-auto" />
-    <h3 class="text-xl capitalize text-center mt-4">{name}</h3>
+
+<article class="group w-full h-[300px] perspective-1000 cursor-pointer">
+    <div
+        class="relative w-full h-full transition-transform duration-700 transform-style-3d"
+        id={`card-${id}`}
+    >
+        <!-- Front -->
+        <div
+            class="absolute w-full h-full backface-hidden bg-slate-700 rounded-md flex flex-col items-center justify-center p-4 border border-1 border-violet-400"
+        >
+            <img
+                src={imageUrl}
+                alt={name}
+                class="w-full h-auto object-contain max-h-[200px]"
+            />
+            <h3 class="text-xl capitalize text-center mt-4">{name}</h3>
+        </div>
+
+        <!-- Back -->
+        <div
+            class="absolute w-full h-full backface-hidden rotate-y-180 bg-slate-800 rounded-md flex flex-col items-center justify-center p-4 border border-1 border-violet-400"
+        >
+            <h3 class="text-xl capitalize text-center mb-4 text-violet-300">
+                {name} Stats
+            </h3>
+            <ul class="w-full space-y-2">
+                {
+                    stats.map((stat) => (
+                        <li class="flex justify-between items-center text-sm">
+                            <span class="capitalize text-slate-300">
+                                {stat.name}
+                            </span>
+                            <span class="font-bold text-white">
+                                {stat.value}
+                            </span>
+                        </li>
+                    ))
+                }
+            </ul>
+        </div>
+    </div>
 </article>
+
+<style>
+    .perspective-1000 {
+        perspective: 1000px;
+    }
+    .transform-style-3d {
+        transform-style: preserve-3d;
+    }
+    .backface-hidden {
+        backface-visibility: hidden;
+    }
+    .rotate-y-180 {
+        transform: rotateY(180deg);
+    }
+</style>
+
+<script>
+    // Optional: Add click handler if hover isn't enough or for mobile support
+    const cards = document.querySelectorAll("article");
+    cards.forEach((card) => {
+        card.addEventListener("click", () => {
+            const inner = card.querySelector("div");
+            inner?.classList.toggle("rotate-y-180");
+            // Remove hover effect class if we are clicking to toggle,
+            // or handle conflict. For now, hover is simple and effective.
+            // If we want click-only, we should remove group-hover:rotate-y-180 from the HTML
+            // and rely solely on this script.
+            // The user asked for "click", so let's prioritize click.
+        });
+    });
+</script>

@@ -3,6 +3,13 @@ export interface PokemonDetailsResponse {
     name: string;
     stats: Stat[];
     types: Type[];
+    sprites: {
+        other?: {
+            "official-artwork": {
+                front_default: string;
+            };
+        };
+    };
 }
 
 export interface Stat {

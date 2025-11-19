@@ -1,0 +1,431 @@
+---
+import MainLayout from "../../layouts/MainLayout.astro";
+import {
+    Swords,
+    Trophy,
+    ArrowUp,
+    ArrowDown,
+    Loader2,
+    Play,
+    ArrowLeft,
+} from "lucide-astro";
+
+const title = "Pokemon Battle | Higher or Lower";
+---
+
+<MainLayout title={title}>
+    <a
+        href="/"
+        class="absolute top-4 left-4 px-4 py-2 rounded-full text-white/80 hover:text-white hover:bg-white/10 transition-all flex items-center gap-2 font-medium z-50"
+    >
+        <ArrowLeft class="w-5 h-5" /> GO HOME
+    </a>
+
+    <div class="flex flex-col items-center justify-center min-h-[80vh] px-4">
+        <h1
+            class="text-4xl font-medium text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-600 mb-8 drop-shadow-sm flex items-center gap-3"
+        >
+            <Swords class="w-10 h-10 text-orange-500" />
+            Higher or Lower?
+        </h1>
+
+        <div
+            class="relative w-full max-w-4xl flex flex-col md:flex-row items-center justify-center gap-8 md:gap-16"
+        >
+            <!-- Left Card (Current) -->
+            <div id="current-pokemon-container" class="relative z-10">
+                <!-- Injected via JS -->
+            </div>
+
+            <!-- VS Badge -->
+            <div class="flex flex-col items-center justify-center z-20">
+                <div
+                    class="w-16 h-16 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center shadow-xl mb-4"
+                >
+                    <span class="text-2xl font-normal text-white">VS</span>
+                </div>
+                <div class="text-center">
+                    <p
+                        class="text-white/60 text-sm uppercase tracking-widest mb-1 flex items-center justify-center gap-1"
+                    >
+                        <Trophy class="w-4 h-4 text-yellow-400" /> Score
+                    </p>
+                    <p
+                        id="score-display"
+                        class="text-3xl font-normal text-white"
+                    >
+                        0
+                    </p>
+                </div>
+            </div>
+
+            <!-- Right Card (Next) -->
+            <div id="next-pokemon-container" class="relative z-10">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+
+        <!-- Question Text -->
+        <div
+            id="question-container"
+            class="mt-8 text-center opacity-0 transition-opacity duration-500 h-8"
+        >
+            <h2
+                id="question-text"
+                class="text-2xl md:text-3xl font-normal text-white drop-shadow-md"
+            >
+                <!-- Injected via JS -->
+            </h2>
+        </div>
+
+        <!-- Controls -->
+        <div
+            id="game-controls"
+            class="mt-4 flex gap-6 opacity-0 pointer-events-none transition-opacity duration-500"
+        >
+            <button
+                id="btn-higher"
+                class="px-8 py-3 rounded-full bg-green-500 hover:bg-green-400 text-white font-normal text-lg shadow-lg transform hover:scale-105 transition-all flex items-center gap-2"
+            >
+                Higher <ArrowUp class="w-6 h-6" />
+            </button>
+            <button
+                id="btn-lower"
+                class="px-8 py-3 rounded-full bg-red-500 hover:bg-red-400 text-white font-normal text-lg shadow-lg transform hover:scale-105 transition-all flex items-center gap-2"
+            >
+                Lower <ArrowDown class="w-6 h-6" />
+            </button>
+        </div>
+
+        <!-- Loading State -->
+        <div
+            id="loading-indicator"
+            class="absolute inset-0 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm z-50"
+        >
+            <div class="animate-spin text-blue-500">
+                <Loader2 class="w-12 h-12" />
+            </div>
+        </div>
+
+        <div
+            id="game-over-modal"
+            class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm hidden opacity-0 transition-opacity duration-300"
+        >
+            <div
+                class="relative bg-slate-900/80 backdrop-blur-2xl border border-white/10 rounded-3xl p-10 max-w-md w-full text-center shadow-[0_0_50px_rgba(0,0,0,0.5)] transform scale-90 transition-transform duration-300 overflow-hidden"
+                id="game-over-content"
+            >
+                <!-- Glass Shine Effect -->
+                <div
+                    class="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-white/5 to-transparent pointer-events-none"
+                >
+                </div>
+
+                <div class="relative z-10">
+                    <div
+                        id="game-over-icon"
+                        class="mb-6 flex justify-center drop-shadow-[0_0_15px_rgba(251,191,36,0.5)]"
+                    >
+                        <!-- Icon injected -->
+                    </div>
+                    <h2
+                        id="game-over-title"
+                        class="text-4xl font-medium text-white mb-3 tracking-tight"
+                    >
+                        Game Over
+                    </h2>
+                    <p
+                        id="game-over-message"
+                        class="text-blue-200/80 mb-8 text-lg font-light"
+                    >
+                        Try again!
+                    </p>
+
+                    <div
+                        class="bg-black/30 rounded-2xl p-6 mb-8 border border-white/5 shadow-inner"
+                    >
+                        <p
+                            class="text-xs text-blue-300/60 uppercase tracking-[0.2em] font-normal mb-2"
+                        >
+                            Final Score
+                        </p>
+                        <p
+                            id="final-score"
+                            class="text-6xl font-semibold text-transparent bg-clip-text bg-gradient-to-b from-white to-blue-200 drop-shadow-sm"
+                        >
+                            0
+                        </p>
+                    </div>
+
+                    <button
+                        id="btn-restart"
+                        class="w-full py-4 rounded-full bg-yellow-400 hover:bg-yellow-300 text-slate-900 font-normal text-lg transition-all shadow-lg hover:shadow-yellow-400/25 hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2"
+                    >
+                        <Play class="w-6 h-6 fill-slate-900" /> Play Again
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</MainLayout>
+
+<script>
+    import type { PokemonDetailsResponse } from "../../interfaces/pokemon-details.response";
+
+    // Types
+    interface GamePokemon {
+        name: string;
+        image: string;
+        stats: { name: string; value: number }[];
+    }
+
+    // State
+    let currentPokemon: GamePokemon | null = null;
+    let nextPokemon: GamePokemon | null = null;
+    let currentStatIndex = 0; // Index in the stats array
+    let score = 0;
+    let roundsPlayed = 0;
+    let isGameOver = false;
+    let isLoading = true;
+
+    // DOM Elements
+    const currentContainer = document.getElementById(
+        "current-pokemon-container",
+    );
+    const nextContainer = document.getElementById("next-pokemon-container");
+    const scoreDisplay = document.getElementById("score-display");
+    const questionContainer = document.getElementById("question-container");
+    const questionText = document.getElementById("question-text");
+    const btnHigher = document.getElementById("btn-higher");
+    const btnLower = document.getElementById("btn-lower");
+    const controls = document.getElementById("game-controls");
+    const loadingIndicator = document.getElementById("loading-indicator");
+
+    // Game Over Elements
+    const gameOverModal = document.getElementById("game-over-modal");
+    const gameOverContent = document.getElementById("game-over-content");
+    const gameOverIcon = document.getElementById("game-over-icon");
+    const gameOverTitle = document.getElementById("game-over-title");
+    const gameOverMessage = document.getElementById("game-over-message");
+    const finalScore = document.getElementById("final-score");
+    const btnRestart = document.getElementById("btn-restart");
+
+    // Constants
+    const MAX_ROUNDS = 10;
+
+    // Utils
+    const getRandomId = () => Math.floor(Math.random() * 151) + 1;
+
+    const fetchPokemon = async (): Promise<GamePokemon> => {
+        const id = getRandomId();
+        const resp = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`);
+        const data = (await resp.json()) as PokemonDetailsResponse;
+
+        return {
+            name: data.name,
+            image: data.sprites.other?.["official-artwork"].front_default || "",
+            stats: data.stats.map((s) => ({
+                name: s.stat.name,
+                value: s.base_stat,
+            })),
+        };
+    };
+
+    const pickRandomStatIndex = () => Math.floor(Math.random() * 6); // 0-5
+
+    const renderCard = (
+        pokemon: GamePokemon,
+        container: HTMLElement | null,
+        showStat: boolean,
+        statIndex: number,
+    ) => {
+        if (!container || !pokemon) return;
+
+        const stat = pokemon.stats[statIndex];
+        let statName = stat.name.replace("-", " ");
+        if (stat.name === "hp") {
+            statName = "Hit Points";
+        }
+
+        const statHtml = showStat
+            ? `<div class="mt-4 text-center animate-fade-in">
+             <p class="text-sm text-white/60 uppercase tracking-wider">${statName}</p>
+             <p class="text-4xl font-normal text-white">${stat.value}</p>
+           </div>`
+            : `<div class="mt-4 text-center">
+             <p class="text-sm text-white/60 uppercase tracking-wider">${statName}</p>
+             <p class="text-4xl font-normal text-white/40">???</p>
+           </div>`;
+
+        container.innerHTML = `
+        <div class="w-64 h-96 bg-white/5 backdrop-blur-md border border-white/10 rounded-3xl p-6 flex flex-col items-center justify-center shadow-2xl transition-all duration-500">
+            <img src="${pokemon.image}" alt="${pokemon.name}" class="w-40 h-40 object-contain drop-shadow-lg mb-4" />
+            <h2 class="text-2xl font-normal text-white capitalize text-center">${pokemon.name}</h2>
+            ${statHtml}
+        </div>
+      `;
+    };
+
+    const updateQuestion = () => {
+        if (!nextPokemon || !questionText) return;
+        let statName = nextPokemon.stats[currentStatIndex].name.replace(
+            "-",
+            " ",
+        );
+        if (nextPokemon.stats[currentStatIndex].name === "hp") {
+            statName = "Hit Points";
+        }
+        // "Is Nidorina attack... ?"
+        // Capitalize name
+        const name =
+            nextPokemon.name.charAt(0).toUpperCase() +
+            nextPokemon.name.slice(1);
+        questionText.innerHTML = `Is <span class="text-yellow-400">${name}'s</span> <span class="text-blue-400">${statName}</span>...`;
+    };
+
+    const showGameOver = () => {
+        if (
+            !gameOverModal ||
+            !gameOverContent ||
+            !gameOverIcon ||
+            !gameOverTitle ||
+            !gameOverMessage ||
+            !finalScore
+        )
+            return;
+
+        isGameOver = true;
+        finalScore.innerText = score.toString();
+
+        if (score >= MAX_ROUNDS) {
+            gameOverTitle.innerText = "You Won!";
+            gameOverMessage.innerText = "Perfect 10 rounds!";
+            gameOverIcon.innerHTML =
+                '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trophy"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2h-5.5a5.5 5.5 0 0 0-5.5 5.5V9c0 3.02 2.34 5.5 5.14 5.5h.72c2.8 0 5.14-2.48 5.14-5.5V7.5A5.5 5.5 0 0 0 18 2Z"/></svg>';
+        } else if (score > 5) {
+            gameOverTitle.innerText = "You are Superb!";
+            gameOverMessage.innerText = "Great knowledge trainer!";
+            gameOverIcon.innerHTML =
+                '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trophy"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2h-5.5a5.5 5.5 0 0 0-5.5 5.5V9c0 3.02 2.34 5.5 5.14 5.5h.72c2.8 0 5.14-2.48 5.14-5.5V7.5A5.5 5.5 0 0 0 18 2Z"/></svg>';
+        } else {
+            gameOverTitle.innerText = "Game Over";
+            gameOverMessage.innerText = "I'm sorry, try again!";
+            gameOverIcon.innerHTML =
+                '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-frown"><circle cx="12" cy="12" r="10"/><path d="M16 16s-1.5-2-4-2-4 2-4 2"/><line x1="9" x2="9.01" y1="9" y2="9"/><line x1="15" x2="15.01" y1="9" y2="9"/></svg>';
+        }
+
+        gameOverModal.classList.remove("hidden");
+        // Trigger reflow
+        void gameOverModal.offsetWidth;
+        gameOverModal.classList.remove("opacity-0");
+        gameOverContent.classList.remove("scale-90");
+    };
+
+    const initGame = async () => {
+        isLoading = true;
+        isGameOver = false;
+        score = 0;
+        roundsPlayed = 0;
+        if (scoreDisplay) scoreDisplay.innerText = "0";
+        if (loadingIndicator) loadingIndicator.style.display = "flex";
+        if (gameOverModal) {
+            gameOverModal.classList.add("opacity-0");
+            gameOverModal.classList.add("hidden");
+        }
+
+        try {
+            currentPokemon = await fetchPokemon();
+            nextPokemon = await fetchPokemon();
+
+            while (nextPokemon.name === currentPokemon.name) {
+                nextPokemon = await fetchPokemon();
+            }
+
+            currentStatIndex = pickRandomStatIndex();
+
+            renderCard(
+                currentPokemon,
+                currentContainer,
+                true,
+                currentStatIndex,
+            );
+            renderCard(nextPokemon, nextContainer, false, currentStatIndex);
+            updateQuestion();
+
+            isLoading = false;
+            if (loadingIndicator) loadingIndicator.style.display = "none";
+            if (controls) {
+                controls.style.opacity = "1";
+                controls.style.pointerEvents = "auto";
+            }
+            if (questionContainer) questionContainer.style.opacity = "1";
+        } catch (error) {
+            console.error("Failed to init game", error);
+        }
+    };
+
+    const handleGuess = async (guess: "higher" | "lower") => {
+        if (isLoading || isGameOver || !currentPokemon || !nextPokemon) return;
+
+        isLoading = true;
+
+        // Reveal next pokemon stat
+        renderCard(nextPokemon, nextContainer, true, currentStatIndex);
+
+        const currentVal = currentPokemon.stats[currentStatIndex].value;
+        const nextVal = nextPokemon.stats[currentStatIndex].value;
+
+        const isHigher = nextVal >= currentVal;
+        const isCorrect =
+            (guess === "higher" && isHigher) ||
+            (guess === "lower" && !isHigher);
+
+        await new Promise((r) => setTimeout(r, 1000));
+
+        // Always increment rounds played
+        roundsPlayed++;
+
+        if (isCorrect) {
+            score++;
+            if (scoreDisplay) scoreDisplay.innerText = score.toString();
+        }
+
+        // Check Game Over
+        if (roundsPlayed >= MAX_ROUNDS) {
+            showGameOver();
+            return;
+        }
+
+        // Proceed to next round regardless of win/loss
+
+        // Move Next to Current
+        currentPokemon = nextPokemon;
+
+        // Pick NEW random stat for next round
+        currentStatIndex = pickRandomStatIndex();
+
+        // Re-render current with NEW stat
+        renderCard(currentPokemon, currentContainer, true, currentStatIndex);
+
+        // Fetch new Next
+        if (nextContainer)
+            nextContainer.innerHTML =
+                '<div class="w-64 h-96 flex items-center justify-center"><div class="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin"></div></div>';
+
+        nextPokemon = await fetchPokemon();
+        while (nextPokemon.name === currentPokemon.name) {
+            nextPokemon = await fetchPokemon();
+        }
+        renderCard(nextPokemon, nextContainer, false, currentStatIndex);
+        updateQuestion();
+
+        isLoading = false;
+    };
+
+    btnHigher?.addEventListener("click", () => handleGuess("higher"));
+    btnLower?.addEventListener("click", () => handleGuess("lower"));
+    btnRestart?.addEventListener("click", () => initGame());
+
+    // Start
+    initGame();
+</script>

@@ -2,6 +2,8 @@
 import MainLayout from "../layouts/MainLayout.astro";
 import type { PokemonListResponse } from "../interfaces/pokemon-list.response";
 import PokemonCard from "../components/pokemons/PokemonCard.astro";
+import { Gamepad2 } from "lucide-astro";
+
 const title = "Pokemon Static | Home";
 const headline = "Pokemon List";
 
@@ -17,6 +19,15 @@ console.log("~data:", data);
 	>
 		{headline}
 	</h1>
+
+	<div class="flex justify-center mb-8">
+		<a
+			href="/battle"
+			class="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-full transition-colors shadow-lg flex items-center gap-2"
+		>
+			Play Higher or Lower Game <Gamepad2 class="w-6 h-6" />
+		</a>
+	</div>
 	<section
 		class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 px-4"
 		aria-label="Pokemon List"
